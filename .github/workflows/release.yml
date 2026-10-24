@@ -1,0 +1,57 @@
+# Cut a release from main:
+#   1. validates the version (SemVer, must be new)
+#   2. creates tag vX.Y.Z on the current main commit
+#   3. creates read-only backup branch release/vX.Y.Z (protected by the release-backups ruleset)
+#   4. publishes a GitHub Release with notes generated from merged PR labels (.github/release.yml)
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without 'v' (e.g. 1.4.0)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Validate version
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::'$VERSION' is not SemVer"; exit 1; }
+          if gh api "repos/$GH_REPO/git/ref/tags/v$VERSION" >/dev/null 2>&1; then echo "::error::Tag v$VERSION already exists"; exit 1; fi
+          if gh api "repos/$GH_REPO/git/ref/heads/release/v$VERSION" >/dev/null 2>&1; then echo "::error::Branch release/v$VERSION already exists"; exit 1; fi
+
+      - name: Create tag, backup branch and release
+        env:
+          VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/v$VERSION" -f sha="$SHA"
+          gh api "repos/$GH_REPO/git/refs" -f ref="refs/heads/release/v$VERSION" -f sha="$SHA"
+          args=(--title "v$VERSION" --generate-notes --target "$SHA" --verify-tag)
+          [ "$PRERELEASE" = true ] && args+=(--prerelease)
+          gh release create "v$VERSION" "${args[@]}"
+          echo "### Released v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "- tag \`v$VERSION\` and backup branch \`release/v$VERSION\` at \`$SHA\`" >> "$GITHUB_STEP_SUMMARY"

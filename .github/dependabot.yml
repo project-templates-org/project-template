@@ -1,0 +1,16 @@
+# Dependabot version updates. PRs target `development` so they follow the normal promotion flow.
+# Add an entry per ecosystem the project uses (npm, pip, docker, gomod, ...).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: development
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+    labels: [dependencies]
+    groups:
+      actions:
+        patterns: ["*"]

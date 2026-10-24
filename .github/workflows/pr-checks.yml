@@ -1,0 +1,99 @@
+# Guards every pull request:
+#   branch-flow : enforces the branching model (which head branch may target which base)
+#   pr-title    : enforces Conventional Commits PR titles (squash merges use the title as commit message)
+#   auto-label  : labels the PR from its title / flow (used by release notes)
+# branch-flow and pr-title are REQUIRED status checks in the branch rulesets.
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  branch-flow:
+    name: branch-flow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate head -> base
+        env:
+          HEAD: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          echo "PR: $HEAD -> $BASE"
+          allowed=false
+          case "$BASE" in
+            main)
+              # production: only promotions from staging, or hotfixes
+              case "$HEAD" in staging|hotfix/*|revert-*) allowed=true ;; esac ;;
+            staging)
+              # pre-production: promotions from development, hotfixes, back-merges from main
+              case "$HEAD" in development|hotfix/*|main|revert-*) allowed=true ;; esac ;;
+            development)
+              # integration: work branches + back-merges
+              case "$HEAD" in
+                feature/*|fix/*|chore/*|docs/*|refactor/*|test/*|ci/*|perf/*|build/*|style/*|dependabot/*|revert-*|main|staging) allowed=true ;;
+              esac ;;
+            release/*)
+              echo "::error::release/* branches are read-only backups. Never open PRs into them."
+              exit 1 ;;
+            *)
+              # PRs into work branches (stacked PRs) are allowed
+              allowed=true ;;
+          esac
+          if [ "$allowed" != true ]; then
+            echo "::error::Branch '$HEAD' may not be merged into '$BASE'. See docs/branching-strategy.md"
+            exit 1
+          fi
+          echo "Branch flow OK"
+
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Conventional Commits title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          regex='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|hotfix|release|promote|sync)(\([a-z0-9._/-]+\))?!?: .{3,}$'
+          if [[ ! "$TITLE" =~ $regex ]]; then
+            echo "::error::PR title '$TITLE' must follow Conventional Commits, e.g. 'feat(auth): add SSO login'. See CONTRIBUTING.md"
+            exit 1
+          fi
+          echo "Title OK"
+
+  auto-label:
+    name: auto-label
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Apply labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+          HEAD: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          labels=()
+          type="${TITLE%%[:(!]*}"
+          case "$type" in
+            feat) labels+=("feature") ;;
+            fix|hotfix) labels+=("bug") ;;
+            docs) labels+=("documentation") ;;
+            perf|refactor|style) labels+=("enhancement") ;;
+            chore|ci|build|test) labels+=("chore") ;;
+          esac
+          [[ "$TITLE" =~ ^[a-z]+(\([^\)]*\))?!: ]] && labels+=("breaking-change")
+          [[ "$HEAD" == hotfix/* ]] && labels+=("hotfix")
+          [[ "$HEAD" == dependabot/* ]] && labels+=("dependencies")
+          if [[ "$HEAD" == development && "$BASE" == staging ]] || [[ "$HEAD" == staging && "$BASE" == main ]]; then labels+=("promotion"); fi
+          if [[ "$HEAD" == main || ( "$HEAD" == staging && "$BASE" == development ) ]]; then labels+=("back-merge"); fi
+          for l in "${labels[@]}"; do gh pr edit "$PR" --add-label "$l" || true; done
+          echo "Labels: ${labels[*]:-none}"

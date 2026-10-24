@@ -1,0 +1,25 @@
+# Language-agnostic CI entry point. Replace or extend scripts/ci.sh with the project's
+# lint / test / build commands. The job name `ci` is a REQUIRED status check.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run project checks
+        run: bash scripts/ci.sh

@@ -1,0 +1,69 @@
+# Source of truth for repository labels (synced by .github/workflows/labels-sync.yml).
+# Issue *type* (Epic/Feature/Task/Bug) and Priority/Size live on the issue type and project fields,
+# so labels only cover what those don't: PR kind (release notes), triage state and flow.
+
+# --- Kind (used for release notes) ---
+- name: feature
+  color: "1D76DB"
+  description: New functionality
+- name: bug
+  color: "D73A4A"
+  description: Something isn't working
+- name: enhancement
+  color: "A2EEEF"
+  description: Improvement to existing functionality
+- name: documentation
+  color: "0075CA"
+  description: Documentation only
+- name: chore
+  color: "C5DEF5"
+  description: Maintenance, CI, build, tests
+- name: dependencies
+  color: "0366D6"
+  description: Dependency updates
+- name: security
+  color: "B60205"
+  description: Security related
+- name: breaking-change
+  color: "B60205"
+  description: Introduces a breaking change
+
+# --- Triage / state ---
+- name: needs-triage
+  color: "FBCA04"
+  description: Not yet reviewed by a maintainer
+- name: needs-info
+  color: "FEF2C0"
+  description: Waiting for more information from the reporter
+- name: blocked
+  color: "000000"
+  description: Blocked by another issue or external dependency
+- name: good first issue
+  color: "7057FF"
+  description: Good for newcomers
+- name: help wanted
+  color: "008672"
+  description: Extra attention is needed
+- name: duplicate
+  color: "CFD3D7"
+  description: This issue or PR already exists
+- name: wontfix
+  color: "FFFFFF"
+  description: This will not be worked on
+- name: invalid
+  color: "E4E669"
+  description: Not valid or not reproducible
+
+# --- Flow ---
+- name: promotion
+  color: "5319E7"
+  description: Promotion PR (development -> staging -> main)
+- name: back-merge
+  color: "BFD4F2"
+  description: Back-merge PR (main -> staging -> development)
+- name: hotfix
+  color: "E99695"
+  description: Urgent production fix
+- name: skip-changelog
+  color: "EDEDED"
+  description: Exclude from release notes

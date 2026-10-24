@@ -1,0 +1,22 @@
+# Categories for auto-generated release notes (gh release create --generate-notes).
+changelog:
+  exclude:
+    labels: [skip-changelog, promotion, back-merge]
+    authors: [dependabot]
+  categories:
+    - title: Breaking changes
+      labels: [breaking-change]
+    - title: Features
+      labels: [feature]
+    - title: Bug fixes
+      labels: [bug, hotfix]
+    - title: Improvements
+      labels: [enhancement]
+    - title: Security
+      labels: [security]
+    - title: Documentation
+      labels: [documentation]
+    - title: Maintenance
+      labels: [chore, dependencies]
+    - title: Other changes
+      labels: ["*"]

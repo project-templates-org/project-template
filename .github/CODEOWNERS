@@ -1,0 +1,7 @@
+# Code owners are requested for review automatically.
+# Replace with teams once they exist, e.g.  * @project-templates-org/maintainers
+# (Code-owner review is NOT enforced by the rulesets yet — enable it when there are 2+ reviewers.)
+
+*                @MihirPatel0
+/.github/        @MihirPatel0
+/scripts/        @MihirPatel0

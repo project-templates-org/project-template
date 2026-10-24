@@ -1,0 +1,42 @@
+# Keeps lower branches up to date after changes land higher up (e.g. hotfixes):
+#   push to main    -> opens PR main -> staging       (if staging is behind)
+#   push to staging -> opens PR staging -> development (if development is behind)
+# Note: PRs opened with GITHUB_TOKEN do not trigger other workflows, so required checks
+# will not start on their own. Close and reopen the PR (or push to it) to run the checks.
+# Requires: Settings -> Actions -> "Allow GitHub Actions to create and approve pull requests".
+name: Sync down
+
+on:
+  push:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync-down:
+    name: sync-down
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open back-merge PR if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE: ${{ github.ref_name }}
+        run: |
+          case "$SOURCE" in
+            main) TARGET=staging ;;
+            staging) TARGET=development ;;
+          esac
+          if ! gh api "repos/$GH_REPO/branches/$TARGET" >/dev/null 2>&1; then echo "No $TARGET branch"; exit 0; fi
+          # Compare file changes, not commits: a promotion merge commit alone is not worth a back-merge.
+          ahead=$(gh api "repos/$GH_REPO/compare/$TARGET...$SOURCE" --jq '.ahead_by')
+          changed=$(gh api "repos/$GH_REPO/compare/$TARGET...$SOURCE" --jq '.files | length')
+          if [ "$changed" = "0" ]; then echo "$TARGET already has all changes from $SOURCE"; exit 0; fi
+          existing=$(gh pr list --base "$TARGET" --head "$SOURCE" --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then echo "PR #$existing already open"; exit 0; fi
+          gh pr create --base "$TARGET" --head "$SOURCE" \
+            --title "sync: back-merge $SOURCE into $TARGET" \
+            --label back-merge \
+            --body "Automated back-merge: \`$SOURCE\` is $ahead commit(s) ahead of \`$TARGET\`. Merge with a **merge commit**. Close & reopen this PR to trigger required checks."
