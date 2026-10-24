@@ -114,7 +114,9 @@ jobs:
             elif [ "$lines" -lt 200 ]; then size=M
             elif [ "$lines" -lt 500 ]; then size=L
             else size=XL; fi
-            for s in XS S M L XL; do [ "$s" != "$size" ] && gh pr edit "$PR" --remove-label "size/$s" >/dev/null 2>&1 || true; done
+            for s in XS S M L XL; do
+              if [ "$s" != "$size" ]; then gh pr edit "$PR" --remove-label "size/$s" >/dev/null 2>&1 || true; fi
+            done
             labels+=("size/$size")
           fi
           for l in "${labels[@]}"; do gh pr edit "$PR" --add-label "$l" >/dev/null || echo "::warning::could not add label $l"; done
