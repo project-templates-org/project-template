@@ -71,6 +71,28 @@ for f in "$HERE"/.github/rulesets/*.json; do
   fi
 done
 
+step "Environments (development / staging / production)"
+# Each environment only accepts deployments from its branch; production also needs an approval
+# from the person running bootstrap (change reviewers in Settings → Environments).
+ME_ID="$(gh api user --jq '.id')"
+env_branch() { case "$1" in development) echo development ;; staging) echo staging ;; production) echo main ;; esac; }
+for env in development staging production; do
+  if [ "$env" = production ]; then
+    body="{\"wait_timer\":0,\"prevent_self_review\":false,\"reviewers\":[{\"type\":\"User\",\"id\":$ME_ID}],\"deployment_branch_policy\":{\"protected_branches\":false,\"custom_branch_policies\":true}}"
+  else
+    body='{"wait_timer":0,"reviewers":[],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
+  fi
+  echo "$body" | gh api -X PUT "repos/$REPO/environments/$env" --input - >/dev/null
+  branch="$(env_branch "$env")"
+  if ! gh api "repos/$REPO/environments/$env/deployment-branch-policies" --jq '.branch_policies[].name' | grep -qx "$branch"; then
+    gh api -X POST "repos/$REPO/environments/$env/deployment-branch-policies" -f name="$branch" -f type=branch >/dev/null
+  fi
+  echo "$env ← $branch"
+done
+
+step "Private vulnerability reporting"
+gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null && echo "on"
+
 step "Labels (runs labels-sync workflow)"
 gh workflow run labels-sync.yml --repo "$REPO" --ref main && echo "labels-sync triggered" \
   || echo "WARN: could not trigger labels-sync (Actions disabled?)"

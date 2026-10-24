@@ -13,3 +13,4 @@
 | 9 | 2026-10-24 | Scrum-style hybrid board (2-week iterations + Kanban statuses) | pure Kanban; strict Scrum | Works for both; iterations can be ignored |
 | 10 | 2026-10-24 | Checks implemented with plain shell in workflows (no third-party actions except `actions/checkout`) | marketplace actions | Fewer supply-chain dependencies, easy to read |
 | 11 | 2026-10-24 | Issue forms live only in the org `.github` repo | copy into each repo | One source of truth; repos inherit automatically |
+| 12 | 2026-10-24 | Environments per long-lived branch; production gated by a reviewer; deploy workflow opt-in via `DEPLOY_ENABLED` | always-on deploy | Template stays quiet until a project has something to deploy |
