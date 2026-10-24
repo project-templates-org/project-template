@@ -40,4 +40,4 @@ docs/             workflow, branching, project management, releases, security, s
 
 `feature/*` → **development** → **staging** → **main** → `vX.Y.Z` tag and read-only `release/vX.Y.Z` backup branch. Hotfixes branch from `main` and are merged back down automatically.
 
-Start with [docs/](docs/README.md).
+Start with [docs/](docs/README.md). To do everything by hand instead of running the script, follow the [manual setup guide](docs/manual-setup-guide.md).
