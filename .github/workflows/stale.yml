@@ -1,0 +1,41 @@
+# Conservative housekeeping:
+#   - issues labelled `needs-info` with no reply for 14 days are marked stale, closed 7 days later
+#   - PRs idle for 30 days are marked stale, closed 14 days later
+# Anything else (normal backlog issues) is never touched. Add `pinned` to exempt an item.
+name: Stale
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  stale:
+    name: stale
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+        with:
+          only-issue-labels: needs-info
+          days-before-issue-stale: 14
+          days-before-issue-close: 7
+          stale-issue-label: stale
+          stale-issue-message: >
+            No reply to the request for information in 14 days. This issue will close in 7 days
+            unless there is new activity.
+          close-issue-reason: not_planned
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-pr-label: stale
+          stale-pr-message: >
+            This PR has been idle for 30 days. It will close in 14 days unless updated.
+            Push a commit, comment, or add the `pinned` label to keep it open.
+          exempt-issue-labels: pinned,security
+          exempt-pr-labels: pinned,security,promotion
+          exempt-draft-pr: true

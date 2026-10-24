@@ -45,6 +45,11 @@ gh api -X PATCH "repos/$REPO" --input - >/dev/null <<'EOF' && echo "secret scann
 {"security_and_analysis":{"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}}
 EOF
 
+step "Code scanning (CodeQL default setup)"
+# Scans GitHub Actions workflows from day one; CodeQL adds more languages automatically when it detects them.
+gh api -X PATCH "repos/$REPO/code-scanning/default-setup" -f state=configured -f query_suite=default >/dev/null \
+  && echo "CodeQL default setup on" || echo "WARN: code scanning needs a public repo or GitHub Code Security"
+
 step "Actions: allow workflows to open PRs (sync-down back-merges)"
 gh api -X PUT "repos/$REPO/actions/permissions/workflow" \
   -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true >/dev/null \

@@ -17,8 +17,7 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release
@@ -28,6 +27,10 @@ jobs:
   release:
     name: release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      checks: read
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Validate version
@@ -39,6 +42,19 @@ jobs:
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::'$VERSION' is not SemVer"; exit 1; }
           if gh api "repos/$GH_REPO/git/ref/tags/v$VERSION" >/dev/null 2>&1; then echo "::error::Tag v$VERSION already exists"; exit 1; fi
           if gh api "repos/$GH_REPO/git/ref/heads/release/v$VERSION" >/dev/null 2>&1; then echo "::error::Branch release/v$VERSION already exists"; exit 1; fi
+
+      - name: Require green CI on this commit
+        env:
+          SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          result=$(gh api "repos/$GH_REPO/commits/$SHA/check-runs?check_name=ci" --jq '[.check_runs[].conclusion] | if index("success") then "success" else (.[0] // "missing") end')
+          if [ "$result" != success ]; then
+            echo "::error::CI on $SHA is '$result'. Wait for the 'ci' check to pass on main before releasing."
+            exit 1
+          fi
+          echo "CI passed on $SHA"
 
       - name: Create tag, backup branch and release
         env:

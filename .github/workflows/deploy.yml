@@ -10,8 +10,7 @@ on:
     branches: [development, staging, main]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: deploy-${{ github.ref_name }}
@@ -21,11 +20,17 @@ jobs:
   deploy:
     name: deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      deployments: write
     if: vars.DEPLOY_ENABLED == 'true' && contains(fromJSON('["development","staging","main"]'), github.ref_name)
     environment:
       name: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Deploy
         env:
           TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
