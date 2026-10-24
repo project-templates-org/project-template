@@ -25,3 +25,15 @@ Branches `release/*` are read-only. To patch an older version: branch `hotfix/<i
 ## Rollback
 
 Deploy the previous tag / `release/vX.Y.Z` branch, then fix forward with a hotfix.
+
+## Deployments
+
+`deploy.yml` deploys on every push to a long-lived branch once `DEPLOY_ENABLED=true` is set:
+
+| Branch | Environment | Gate |
+|---|---|---|
+| `development` | development | none |
+| `staging` | staging | none |
+| `main` | production | 1 reviewer must approve the run (Actions → run → **Review deployments**) |
+
+Each environment only accepts deployments from its own branch (deployment branch policy).

@@ -24,7 +24,9 @@ Org: **project-templates-org** · Plan: **GitHub Free** · Last updated: 2026-10
 | Dependabot alerts + security updates | on |
 | Secret scanning + push protection | on (free for public repos) |
 | Rulesets | `main`, `staging`, `development`, `release-backups`, `version-tags` — JSON in [`.github/rulesets/`](../.github/rulesets) |
-| Workflows | `pr-checks` (branch-flow, pr-title, auto-label), `ci`, `release`, `sync-down`, `labels-sync` |
+| Workflows | `pr-checks` (branch-flow, pr-title, auto-label), `ci`, `release`, `sync-down`, `labels-sync`, `deploy` (opt-in) |
+| Environments | `development` ← branch development · `staging` ← staging · `production` ← main, **1 required reviewer** |
+| Private vulnerability reporting | on |
 | Labels | [`.github/labels.yml`](../.github/labels.yml) |
 
 ### Rulesets summary
@@ -45,7 +47,7 @@ cd <name>
 bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
 ```
 
-`bootstrap.sh` applies: settings, security, Actions PR permission, `staging` + `development` branches, rulesets, labels, a copy of the **Project Template** board linked to the repo. Then do the manual steps below.
+`bootstrap.sh` applies: settings, security, Actions PR permission, `staging` + `development` branches, rulesets, environments, labels, a copy of the **Project Template** board linked to the repo. Then do the manual steps below.
 
 ## 4. Manual steps (UI only — no API exists)
 
@@ -53,7 +55,7 @@ bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
 2. **Project views**: Group by / Sort / field sums per the views table in [project-management.md](project-management.md#views) — the API can only set name, layout, filter and visible fields.
 3. **Project → Insights**: create charts (burn-up per iteration, items by Status/Priority).
 4. **Org Settings → Repository → Repository labels**: optionally copy labels so even non-template repos start with them.
-5. **Environments** (`development`, `staging`, `production`) with deployment branch rules, once there is something to deploy (see §5).
+5. **Deploys**: write `scripts/deploy.sh`, add environment secrets, then `gh variable set DEPLOY_ENABLED --body true`. Change production reviewers in Settings → Environments.
 
 ## 5. Free plan — possible vs not
 
