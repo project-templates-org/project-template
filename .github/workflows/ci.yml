@@ -8,18 +8,35 @@ on:
     branches: [main, staging, development]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+env:
+  ACTIONLINT_VERSION: 1.7.12
 
 jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint GitHub Actions workflows (actionlint)
+        run: |
+          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          tarball="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLO "$base/$tarball" -O "$base/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          grep " $tarball\$" "actionlint_${ACTIONLINT_VERSION}_checksums.txt" | sha256sum -c -
+          tar -xzf "$tarball" actionlint
+          ./actionlint -color
+
       - name: Run project checks
         run: bash scripts/ci.sh

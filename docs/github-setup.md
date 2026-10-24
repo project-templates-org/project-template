@@ -24,7 +24,8 @@ Org: **project-templates-org** · Plan: **GitHub Free** · Last updated: 2026-10
 | Dependabot alerts + security updates | on |
 | Secret scanning + push protection | on (free for public repos) |
 | Rulesets | `main`, `staging`, `development`, `release-backups`, `version-tags` — JSON in [`.github/rulesets/`](../.github/rulesets) |
-| Workflows | `pr-checks` (branch-flow, pr-title, auto-label), `ci`, `release`, `sync-down`, `labels-sync`, `deploy` (opt-in) |
+| Workflows | `pr-checks` (branch-flow, pr-title, auto-label + size), `ci` (+ actionlint), `release` (CI-gated), `sync-down`, `labels-sync`, `deploy` (opt-in), `scorecard`, `stale` — all actions SHA-pinned, least-privilege |
+| Code scanning | CodeQL default setup + OpenSSF Scorecard |
 | Environments | `development` ← branch development · `staging` ← staging · `production` ← main, **1 required reviewer** |
 | Private vulnerability reporting | on |
 | Labels | [`.github/labels.yml`](../.github/labels.yml) |
