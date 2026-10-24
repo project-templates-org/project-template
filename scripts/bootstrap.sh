@@ -33,7 +33,7 @@ step "Repository settings"
 gh api -X PATCH "repos/$REPO" \
   -F allow_squash_merge=true -F allow_merge_commit=true -F allow_rebase_merge=false \
   -F delete_branch_on_merge=true -F allow_auto_merge=true -F allow_update_branch=true \
-  -F has_wiki=false -F is_template=false \
+  -F has_wiki=false \
   -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY \
   -f merge_commit_title=PR_TITLE -f merge_commit_message=PR_BODY >/dev/null
 echo "merge settings applied"
