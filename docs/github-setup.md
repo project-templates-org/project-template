@@ -7,8 +7,8 @@ Org: **project-templates-org** · Plan: **GitHub Free** · Last updated: 2026-10
 | Item | State | How |
 |---|---|---|
 | `.github` repo (public) | issue forms, PR template, CONTRIBUTING / SECURITY / SUPPORT / CODE_OF_CONDUCT, org profile, workflow templates | git |
-| Issue types | **Epic** (added), Feature, Task, Bug | REST `orgs/{org}/issue-types` |
-| Project **Project Template** | marked as template; fields, iterations, views, onboarding draft items | GraphQL Projects v2 |
+| Issue types | Feature, Task, Bug exist; **Epic pending** (#9) | REST `orgs/{org}/issue-types` or org Settings → Planning |
+| Project [**Project Template** (#1)](https://github.com/orgs/project-templates-org/projects/1) | public, marked as template, linked to this repo; 7 fields, Sprint 1–4 (from 2026-10-26), 7 views, 3 onboarding drafts | GraphQL Projects v2 |
 | Teams | none yet (single member) — create `maintainers`, `developers` when people join | UI / REST |
 | Org rulesets | ❌ needs Team plan — rules are applied per repo instead | — |
 
@@ -80,3 +80,17 @@ Resource owner **project-templates-org**, *All repositories*.
 
 - Repository: Administration, Contents, Issues, Pull requests, Workflows, Actions, Secrets, Variables, Environments, Commit statuses — read & write; Metadata — read.
 - Organization: Projects, Administration, Members, Issue types — read & write; Custom properties — admin (optional).
+
+## 7. Verification log (2026-10-24)
+
+| Test | Result |
+|---|---|
+| `branch-flow` rejects `chore/*` → `main` (PR #1) | ✅ failed as designed |
+| Work branch → `development`, squash merge (PR #2) | ✅ |
+| `development` → `staging` needs approval; squash rejected; admin bypass merge (PR #3) | ✅ |
+| `staging` → `main` promotion (PR #4); sync-down skips when there are no file changes | ✅ |
+| Release `v0.1.0`: tag, GitHub Release with categorized notes, `release/v0.1.0` created | ✅ |
+| Push to `release/v0.1.0` | ✅ rejected ("Cannot update this protected ref") |
+| `gh project copy` of the template: fields, views, sprints, drafts preserved | ✅ |
+
+Known quirk: checks attach to a **commit**, so two PRs from the same branch show the same check results. Use one branch per PR.
