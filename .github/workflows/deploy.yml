@@ -1,0 +1,37 @@
+# Deploys each long-lived branch to its environment:
+#   development -> development · staging -> staging · main -> production (needs approval)
+# Environment protection (branch policy, reviewers) is configured by scripts/bootstrap.sh.
+# Opt-in: set repository variable DEPLOY_ENABLED=true (gh variable set DEPLOY_ENABLED --body true)
+# and put the real deployment commands in scripts/deploy.sh.
+name: Deploy
+
+on:
+  push:
+    branches: [development, staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    if: vars.DEPLOY_ENABLED == 'true' && contains(fromJSON('["development","staging","main"]'), github.ref_name)
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        env:
+          TARGET_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+        run: |
+          if [ -f scripts/deploy.sh ]; then
+            bash scripts/deploy.sh "$TARGET_ENV"
+          else
+            echo "No scripts/deploy.sh yet — nothing to deploy to $TARGET_ENV."
+          fi
