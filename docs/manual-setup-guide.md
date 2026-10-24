@@ -265,7 +265,7 @@ Don't create Priority, Type or Status labels: those are issue types and project 
 ## 4. The project board
 
 ### 4.1 Create — *org page → Projects → New project*
-Start from **Project Template** (the *Templates* tab) ⭐. That copies everything in 4.2–4.6, and you only need 4.7–4.11. To build one from scratch, pick **Table**, name it after the product, then:
+Start from **Project Template** (the *Templates* tab) ⭐. That copies fields, iterations and views (4.2–4.6). After copying, do the **UI only** cells in 4.4 plus 4.7–4.11: copies don't keep roadmap dates, sums or charts reliably, so always check them. To build one from scratch, pick **Table**, name it after the product, then:
 
 ### 4.2 Status field — *table header → Status → Edit field*
 Rename and add options in this order:
@@ -293,17 +293,31 @@ Rename and add options in this order:
 The built-in fields (*Type*, *Parent issue*, *Sub-issues progress*, *Linked pull requests*, *Assignees*, *Labels*, *Milestone*) only need to be shown: **+ → Hidden fields**.
 
 ### 4.4 Views — *+ New view*, then in each view open the **view menu ▾** and **Save**
-| # | Name | Layout | Filter | Group by | Sort | Columns / extras |
-|---|---|---|---|---|---|---|
-| 1 | Backlog | Table | `-status:Done` | Status | Priority ↑ | Title, Status, Priority, Size, Area, Iteration, Assignees, Parent issue, Labels |
-| 2 | Current sprint | Board | `iteration:@current` | — (columns = Status) | Priority | Card fields: Assignees, Priority, Size, Labels |
-| 3 | Sprint planning | Table | `iteration:@current,@next -status:Done` | Iteration | Priority | Field sum: **Estimate** (Group menu → *Field sum*) |
-| 4 | Epics | Table | `type:Epic` | — | Target date | Sub-issues progress, Status, Priority, Start / Target date, Milestone |
-| 5 | Bugs triage | Table | `type:Bug -status:Done` | Status | Priority | Priority, Area, Assignees, Labels, Repository |
-| 6 | My work | Board | `assignee:@me -status:Done` | — | Priority | Priority, Size, Iteration |
-| 7 | Roadmap | Roadmap | `type:Epic,Feature` | — | Start date | Dates: **Start date → Target date** · Zoom **Quarter** · Markers: **Iteration** |
 
-Optional on boards: *view menu → Column limit* (WIP limit, e.g. In progress = 3 per person).
+Automated: `bash scripts/setup-views.sh <org> <project-number>` creates all 14 views with layout, filter, grouping, sorting and columns. Only the cells marked **UI** need clicks afterwards.
+
+| # | Name | Layout | Filter | Group / columns | Sort | Fields shown | UI only |
+|---|---|---|---|---|---|---|---|
+| 1 | Board | Board | `-status:Done` | columns: Status | Priority ↑ | Assignees, Priority, Size, Iteration, Labels, Type | **Column limit** In progress = 2 × team size |
+| 2 | Current sprint | Board | `iteration:@current` | columns: Status | Priority ↑ | Assignees, Priority, Size, Estimate, Labels, Type | **Field sum** = Estimate |
+| 3 | My work | Board | `assignee:@me -status:Done` | columns: Status | Priority ↑ | Priority, Size, Iteration, Type | — |
+| 4 | Review queue | Table | `is:pr is:open` | — | Priority ↑ | Assignees, Reviewers, Status, Priority, Linked PRs, Repository, Labels | — |
+| 5 | Backlog | Table | `-status:Done` | group: Status | Priority ↑ | Type, Priority, Size, Estimate, Area, Iteration, Assignees, Parent, Labels | **Field sum** = Estimate |
+| 6 | Triage inbox | Table | `no:priority -status:Done` | — | Type ↑ | Type, Status, Priority, Size, Area, Labels, Repository | — |
+| 7 | Sprint planning | Table | `-status:Done` | group: Iteration | Priority ↑ | Type, Status, Priority, Size, Estimate, Assignees, Parent | **Field sum** = Estimate (shows capacity per sprint) |
+| 8 | Team workload | Table | `-status:Done -no:assignee` | group: Assignees | Priority ↑ | Type, Status, Priority, Size, Estimate, Iteration | **Field sum** = Estimate |
+| 9 | Sprint review | Table | `iteration:@current status:Done` | — | Type ↑ | Type, Assignees, Estimate, Linked PRs, Parent | — |
+| 10 | Epics | Table | `type:Epic` | — | Target date ↑ | Status, Sub-issues progress, Priority, Start / Target date, Milestone, Assignees | — |
+| 11 | Bugs | Table | `type:Bug -status:Done` | group: Priority | Priority ↑ | Status, Priority, Size, Area, Assignees, Labels, Repository | — |
+| 12 | Blocked | Table | `label:blocked -status:Done` | — | Priority ↑ | Type, Status, Priority, Assignees, Labels, Parent | — |
+| 13 | Roadmap | Roadmap | `type:Epic,Feature` | — | Start date ↑ | — | **Dates** → Start date / Target date · **Zoom** Quarter · **Markers** Iteration, Milestone |
+| 14 | Roadmap by area | Roadmap | `type:Epic,Feature` | group: Area | Start date ↑ | — | Same as Roadmap |
+
+**Roadmap dates, step by step** (no API exists for this): open the Roadmap view → **Date fields** (calendar icon, top right of the view) → *Start date*: **Start date** · *Target date*: **Target date** → **Markers**: ✅ Iteration ✅ Milestone → **Zoom**: Quarter → view menu ▾ → **Save changes**. Without this step, items show under "No dates".
+
+**Field sums:** in a grouped table or a board, open the view menu ▾ → **Field sum** → ✅ Estimate → Save.
+
+**Column limits (WIP):** on a board, open the column's ⋯ → **Set limit**.
 
 ### 4.5 Project README and description — *⋯ → Settings*
 Short description plus a README explaining the status flow, hierarchy, fields and views (see the Project Template's README).
@@ -326,11 +340,22 @@ Short description plus a README explaining the status flow, hierarchy, fields an
 Remember: `Closes #N` only closes issues when a PR merges into **`main`**. Write `Refs #N` on feature PRs, and list `Closes #…` in the `staging → main` promotion PR.
 
 ### 4.8 Insights — *Insights → New chart* (UI only)
-| Chart | Layout | Filter | X-axis / group |
-|---|---|---|---|
-| Sprint burn-up | (default) | `iteration:@current` | time |
-| Status by priority | Stacked bar | `-status:Done` | Status, grouped by Priority |
-| Open bugs by area | Bar | `type:Bug -status:Done` | Area |
+
+GitHub has no API for charts. Create each one, set the filter and options, then **Save chart**:
+
+| # | Chart | Layout | Filter | X-axis | Group by | Y-axis | Answers |
+|---|---|---|---|---|---|---|---|
+| 1 | Burn-up (built-in) | Line (historical) | `iteration:@current` | Time | Status | Count of items | Will the sprint finish? |
+| 2 | Velocity | Stacked column | `status:Done` | Iteration | Type | **Sum of Estimate** | How many points per sprint? (planning capacity) |
+| 3 | Work in progress | Stacked bar | `-status:Done` | Status | Priority | Count | Where is work piling up? |
+| 4 | Workload by person | Bar | `-status:Done` | Assignees | Status | Sum of Estimate | Is anyone overloaded? |
+| 5 | Open bugs by priority | Column | `type:Bug -status:Done` | Priority | Area | Count | Bug debt and severity |
+| 6 | Bug trend | Line (historical) | `type:Bug` | Time | Status | Count | Are bugs growing or shrinking? |
+| 7 | Scope by type | Donut / column | `-status:Done` | Type | — | Count | Features vs bugs vs tasks balance |
+| 8 | Epic progress | Stacked bar | `type:Feature,Task,Bug` | Parent issue | Status | Count | Which epics are behind? |
+| 9 | Cumulative flow | Stacked area (historical) | — | Time | Status | Count | Flow stability and bottlenecks |
+
+Historical charts (1, 6, 9) plot changes over time. "Current" charts show today's snapshot.
 
 ### 4.9 Status updates — *project header → Status update*
 Post one at every sprint end: **On track / At risk / Off track / Complete**, a target date, and 3 bullet points.

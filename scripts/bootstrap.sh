@@ -122,6 +122,7 @@ cat <<EOF
 ==> Done. Manual steps (not available via API) — see docs/github-setup.md:
   1. Project → Workflows: enable "Auto-add to project" (filter: repo:$REPO is:issue,pr is:open),
      "Item closed" → Done, "Pull request merged" → Done, "Auto-archive items".
-  2. Project views: set Group by / Sort / Slice where noted in docs/project-management.md.
+  2. Project views: Roadmap → Date fields = Start date / Target date, and Estimate field sums
+     (docs/manual-setup-guide.md §4.4). Re-create views any time: scripts/setup-views.sh $OWNER <number>
   3. Replace CODEOWNERS owners with your team, and add project-specific checks to scripts/ci.sh.
 EOF

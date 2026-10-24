@@ -33,6 +33,7 @@ scripts/
   bootstrap.sh    applies settings, branches, rulesets, environments, labels and the project board
   ci.sh           generic checks + your project checks
   deploy.sh       deployment placeholder (called per environment by deploy.yml)
+  setup-views.sh  (re)creates the 14 standard board views with grouping and sorting
 docs/             workflow, branching, project management, releases, security, setup, decisions
 ```
 
