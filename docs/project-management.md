@@ -33,15 +33,18 @@ Each product gets its own org project, copied from **Project Template** by `scri
 
 ### Views
 
-| View | Layout | Filter | Set in UI (not available via API) |
-|---|---|---|---|
-| **Backlog** | Table | `-status:Done` | Group by **Status**, sort by **Priority** |
-| **Current sprint** | Board | `iteration:@current` | Columns = Status (default) |
-| **Sprint planning** | Table | `iteration:@current,@next,""  -status:Done` | Group by **Iteration**, show sum of **Estimate** |
-| **Roadmap** | Roadmap | `type:Epic,Feature` | Dates = Start date / Target date, zoom = Quarter |
-| **Epics** | Table | `type:Epic` | Show Sub-issues progress column |
-| **Bugs triage** | Table | `type:Bug -status:Done` | Sort by **Priority**, group by **Status** |
-| **My work** | Board | `assignee:@me -status:Done` | — |
+14 views in four groups. They're created by `scripts/setup-views.sh`; the full spec (filters, grouping, sorting, the UI-only bits) is in [manual-setup-guide.md §4.4](manual-setup-guide.md#44-views--new-view-then-in-each-view-open-the-view-menu--and-save).
+
+| Group | Views | Used in |
+|---|---|---|
+| Daily work | Board, Current sprint, My work, Review queue | stand-up, picking the next item, unblocking reviews |
+| Planning | Backlog, Triage inbox, Sprint planning, Team workload, Sprint review | triage, sprint planning (capacity via Estimate sums), sprint review demo |
+| Delivery & quality | Epics, Bugs, Blocked | epic progress, bug debt, escalation |
+| Roadmaps | Roadmap, Roadmap by area | quarterly planning, stakeholder updates |
+
+### Insights charts
+
+Burn-up, velocity, WIP, workload, bugs by priority, bug trend, scope by type, epic progress, cumulative flow. The setup is in [manual-setup-guide.md §4.8](manual-setup-guide.md#48-insights--insights--new-chart-ui-only) (UI only).
 
 ### Project automations (Project → ⋯ → Workflows, UI only)
 
