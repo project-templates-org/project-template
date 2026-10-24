@@ -1,7 +1,7 @@
 # Guards every pull request:
 #   branch-flow : enforces the branching model (which head branch may target which base)
 #   pr-title    : enforces Conventional Commits PR titles (squash merges use the title as commit message)
-#   auto-label  : labels the PR from its title / flow (used by release notes)
+#   auto-label  : labels the PR from its title / flow / size (used by release notes and review triage)
 # branch-flow and pr-title are REQUIRED status checks in the branch rulesets.
 name: PR checks
 
@@ -9,13 +9,17 @@ on:
   pull_request:
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   branch-flow:
     name: branch-flow
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - name: Validate head -> base
         env:
@@ -52,6 +56,7 @@ jobs:
   pr-title:
     name: pr-title
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - name: Validate Conventional Commits title
         env:
@@ -67,6 +72,8 @@ jobs:
   auto-label:
     name: auto-label
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+    # Fork PRs get a read-only token, so labelling only runs for branches in this repo.
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       pull-requests: write
@@ -80,6 +87,8 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
           HEAD: ${{ github.head_ref }}
           BASE: ${{ github.base_ref }}
+          ADDITIONS: ${{ github.event.pull_request.additions }}
+          DELETIONS: ${{ github.event.pull_request.deletions }}
         run: |
           labels=()
           type="${TITLE%%[:(!]*}"
@@ -93,7 +102,22 @@ jobs:
           [[ "$TITLE" =~ ^[a-z]+(\([^\)]*\))?!: ]] && labels+=("breaking-change")
           [[ "$HEAD" == hotfix/* ]] && labels+=("hotfix")
           [[ "$HEAD" == dependabot/* ]] && labels+=("dependencies")
-          if [[ "$HEAD" == development && "$BASE" == staging ]] || [[ "$HEAD" == staging && "$BASE" == main ]]; then labels+=("promotion"); fi
-          if [[ "$HEAD" == main || ( "$HEAD" == staging && "$BASE" == development ) ]]; then labels+=("back-merge"); fi
-          for l in "${labels[@]}"; do gh pr edit "$PR" --add-label "$l" || true; done
+          promotion=false
+          if [[ "$HEAD" == development && "$BASE" == staging ]] || [[ "$HEAD" == staging && "$BASE" == main ]]; then labels+=("promotion"); promotion=true; fi
+          if [[ "$HEAD" == main || ( "$HEAD" == staging && "$BASE" == development ) ]]; then labels+=("back-merge"); promotion=true; fi
+
+          # Size label for work PRs (promotions/back-merges are naturally large)
+          if [ "$promotion" = false ]; then
+            lines=$(( ADDITIONS + DELETIONS ))
+            if   [ "$lines" -lt 10 ];  then size=XS
+            elif [ "$lines" -lt 50 ];  then size=S
+            elif [ "$lines" -lt 200 ]; then size=M
+            elif [ "$lines" -lt 500 ]; then size=L
+            else size=XL; fi
+            for s in XS S M L XL; do
+              if [ "$s" != "$size" ]; then gh pr edit "$PR" --remove-label "size/$s" >/dev/null 2>&1 || true; fi
+            done
+            labels+=("size/$size")
+          fi
+          for l in "${labels[@]}"; do gh pr edit "$PR" --add-label "$l" >/dev/null || echo "::warning::could not add label $l"; done
           echo "Labels: ${labels[*]:-none}"

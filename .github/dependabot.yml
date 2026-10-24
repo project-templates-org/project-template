@@ -11,6 +11,8 @@ updates:
       prefix: chore
       include: scope
     labels: [dependencies]
+    cooldown:
+      default-days: 3
     groups:
       actions:
         patterns: ["*"]
