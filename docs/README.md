@@ -6,6 +6,7 @@
 | [Branching strategy](branching-strategy.md) | You open a PR, promote or hotfix |
 | [Project management](project-management.md) | You triage, plan a sprint or set up the board |
 | [Release process](release-process.md) | You ship a version |
+| [**Manual setup guide**](manual-setup-guide.md) | You want to set everything up by hand, or audit a repo or org setting by setting |
 | [GitHub setup](github-setup.md) | You create a new project, or want to know what's configured and what the Free plan can't do |
 | [Security & engineering practices](security-and-quality.md) | You change workflows, add dependencies, or want to tighten rules |
 | [Decision log](decisions.md) | You wonder *why* it is set up this way |
