@@ -23,7 +23,7 @@ After that:
 
 ```
 .github/
-  workflows/      pr-checks (branch-flow, pr-title, auto-label), ci, release, sync-down, labels-sync, deploy
+  workflows/      pr-checks, ci (+actionlint), release, sync-down, labels-sync, deploy, scorecard, stale
   rulesets/       main, staging, development, release-backups, version-tags  (applied by bootstrap)
   labels.yml      label definitions
   release.yml     release-note categories
@@ -33,7 +33,7 @@ scripts/
   bootstrap.sh    applies settings, branches, rulesets, environments, labels and the project board
   ci.sh           generic checks + your project checks
   deploy.sh       deployment placeholder (called per environment by deploy.yml)
-docs/             workflow, branching, project management, releases, setup, decisions
+docs/             workflow, branching, project management, releases, security, setup, decisions
 ```
 
 ## Flow at a glance

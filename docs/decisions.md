@@ -14,3 +14,8 @@
 | 10 | 2026-10-24 | Checks implemented with plain shell in workflows (no third-party actions except `actions/checkout`) | marketplace actions | Fewer supply-chain dependencies, easy to read |
 | 11 | 2026-10-24 | Issue forms live only in the org `.github` repo | copy into each repo | One source of truth; repos inherit automatically |
 | 12 | 2026-10-24 | Environments per long-lived branch; production gated by a reviewer; deploy workflow opt-in via `DEPLOY_ENABLED` | always-on deploy | Template stays quiet until a project has something to deploy |
+| 13 | 2026-10-24 | Pin all actions by commit SHA; org requires SHA pinning and allows only GitHub-owned/verified actions | version tags | Tags can be moved to point at other code; SHAs can't (supply-chain best practice, Scorecard "Pinned-Dependencies") |
+| 14 | 2026-10-24 | `permissions: {}` per workflow + per-job grants, timeouts, `persist-credentials: false`, actionlint | defaults | Least privilege; catch workflow bugs before merge |
+| 15 | 2026-10-24 | CodeQL default setup + OpenSSF Scorecard | none | Free for public repos; measurable security posture |
+| 16 | 2026-10-24 | Release requires green `ci` on the tagged commit | trust the operator | Never tag a red build |
+| 17 | 2026-10-24 | Conservative stale bot (needs-info issues, idle PRs only) + PR size labels | aggressive stale; none | Keeps queues healthy without closing real backlog |
