@@ -52,6 +52,8 @@ bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
 
 ## 4. Manual steps (UI only — no API exists)
 
+Full click-by-click instructions for every setting: [manual-setup-guide.md](manual-setup-guide.md).
+
 1. **Project → Workflows**: enable *Auto-add to project* (`is:issue,pr is:open`), *Item closed → Done*, *Pull request merged → Done*, *Auto-archive*. Details in [project-management.md](project-management.md#project-automations-project----workflows-ui-only).
 2. **Project views**: Group by / Sort / field sums per the views table in [project-management.md](project-management.md#views) — the API can only set name, layout, filter and visible fields.
 3. **Project → Insights**: create charts (burn-up per iteration, items by Status/Priority).
