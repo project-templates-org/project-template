@@ -47,4 +47,6 @@ docs/             workflow, branching, project management, releases, security, s
 
 `feature/*` → **development** → **staging** → **main** → `vX.Y.Z` tag and read-only `release/vX.Y.Z` backup branch. Hotfixes branch from `main` and are merged back down automatically.
 
+Several repos for one product (e.g. API + web + mobile) on one board, with sprints separate from releases? Use the **Product Template** board: see [docs/status-and-release-flow.md](docs/status-and-release-flow.md).
+
 Start with [docs/](docs/README.md). To do everything by hand instead of running the script, follow the [manual setup guide](docs/manual-setup-guide.md).

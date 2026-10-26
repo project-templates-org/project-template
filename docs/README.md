@@ -4,7 +4,8 @@
 |---|---|
 | [Development workflow](development-workflow.md) | You start working on an issue |
 | [Branching strategy](branching-strategy.md) | You open a PR, promote or hotfix |
-| [Project management](project-management.md) | You triage, plan a sprint or set up the board |
+| [**Status & release flow**](status-and-release-flow.md) | One product, many repos (.NET / React / Flutter): sprints vs releases, statuses, views, charts |
+| [Project management](project-management.md) | You triage, plan a sprint or set up a single-repo board |
 | [Release process](release-process.md) | You ship a version |
 | [**Manual setup guide**](manual-setup-guide.md) | You want to set everything up by hand, or audit a repo or org setting by setting |
 | [GitHub setup](github-setup.md) | You create a new project, or want to know what's configured and what the Free plan can't do |

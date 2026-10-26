@@ -1,5 +1,7 @@
 # Project management on GitHub
 
+> This page describes the single-repo **Project Template** board. For a product with several repositories, where *sprint done* is not *live*, use **Product Template**: [status-and-release-flow.md](status-and-release-flow.md).
+
 ## Work hierarchy
 
 ```

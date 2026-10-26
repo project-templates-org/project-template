@@ -8,6 +8,7 @@
 # named like --project-title; see docs/github-setup.md §3):
 #   scripts/bootstrap.sh <owner>/<repo> [--project-title "My Project"] [--no-project]
 #                        [--sprint-start YYYY-MM-DD] [--sprint-days 14] [--sprints 6]
+#                        [--board-template "Product Template"]   (template named in instructions)
 #
 # Requires: gh CLI authenticated with a token that has (repo) Administration, Contents, Issues,
 # Pull requests, Workflows, Actions = read/write and (org) Projects = read/write.
@@ -29,6 +30,7 @@ while [ $# -gt 0 ]; do
     --sprint-start) SPRINT_START="$2"; shift 2 ;;
     --sprint-days) SPRINT_DAYS="$2"; shift 2 ;;
     --sprints) SPRINTS="$2"; shift 2 ;;
+    --board-template) TEMPLATE_PROJECT_TITLE="$2"; shift 2 ;;
     *) echo "unknown option $1"; exit 1 ;;
   esac
 done
@@ -80,8 +82,22 @@ for b in staging development; do
 done
 
 step "Rulesets (.github/rulesets/*.json)"
-for f in "$HERE"/.github/rulesets/*.json; do
-  name="$(basename "$f" .json)"
+# Required checks (branch-flow, pr-title, ci) only exist if the repo has the template's workflows.
+# Existing repos without them get the rulesets minus the status-check rule, so merges aren't blocked
+# by checks that never run. Copy .github/workflows from the template, then re-run to enforce checks.
+HAS_CHECKS=true
+for wf in pr-checks.yml ci.yml; do
+  gh api "repos/$REPO/contents/.github/workflows/$wf?ref=main" >/dev/null 2>&1 || HAS_CHECKS=false
+done
+[ "$HAS_CHECKS" = true ] || echo "WARN: pr-checks.yml / ci.yml not on main - applying rulesets WITHOUT required status checks"
+TMP_RS="$(mktemp)"
+for src in "$HERE"/.github/rulesets/*.json; do
+  name="$(basename "$src" .json)"
+  f="$TMP_RS"
+  if [ "$HAS_CHECKS" = true ]; then cp "$src" "$f"; else
+    # drop the required_status_checks line and the trailing comma before it
+    awk '/"required_status_checks"/ { next } { lines[++n]=$0 } END { for (i=1;i<=n;i++) { l=lines[i]; if (i<n && lines[i+1] ~ /^ *\]/) sub(/, *$/, "", l); print l } }' "$src" > "$f"
+  fi
   id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$name\") | .id")"
   if [ -n "$id" ]; then
     gh api -X PUT "repos/$REPO/rulesets/$id" --input "$f" >/dev/null && echo "updated $name"
@@ -89,6 +105,7 @@ for f in "$HERE"/.github/rulesets/*.json; do
     gh api -X POST "repos/$REPO/rulesets" --input "$f" >/dev/null && echo "created $name"
   fi
 done
+rm -f "$TMP_RS"
 
 step "Environments (development / staging / production)"
 # Each environment only accepts deployments from its branch; production also needs an approval
@@ -112,9 +129,17 @@ done
 step "Private vulnerability reporting"
 gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null && echo "on"
 
-step "Labels (runs labels-sync workflow)"
-gh workflow run labels-sync.yml --repo "$REPO" --ref main && echo "labels-sync triggered" \
-  || echo "WARN: could not trigger labels-sync (Actions disabled?)"
+step "Labels (.github/labels.yml)"
+# Created directly, so it also works for existing repos; labels not in the file are left alone.
+awk '
+  /^- name:/        { if (name != "") print name "\t" color "\t" desc; name=$0; sub(/^- name: */, "", name); color=""; desc="" }
+  /^  color:/       { color=$0; sub(/^  color: */, "", color) }
+  /^  description:/ { desc=$0;  sub(/^  description: */, "", desc) }
+  END               { if (name != "") print name "\t" color "\t" desc }
+' "$HERE/.github/labels.yml" | tr -d '"' | while IFS=$'\t' read -r name color desc; do
+  gh label create "$name" --repo "$REPO" --color "$color" --description "$desc" --force >/dev/null && printf '.' || printf '!'
+done
+echo " labels synced"
 
 if [ "$WITH_PROJECT" = true ]; then
   step "Project board '$PROJECT_TITLE'"

@@ -92,3 +92,16 @@
 - name: pinned
   color: "0E8A16"
   description: Never mark stale
+
+# --- Product / release flow ---
+- name: regression
+  color: "B60205"
+  description: Worked before, broken now
+- name: needs-migration
+  color: "D93F0B"
+  description: Database/data migration - take care when promoting
+- name: store-review
+  color: "C2E0C6"
+  description: Mobile build waiting for App Store / Play review
+# Topic labels group related work across repos without an Epic. Create them as needed,
+# same name in every repo, colour 5319E7:  topic:<name>   e.g. topic:login, topic:payments

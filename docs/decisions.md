@@ -20,3 +20,7 @@
 | 16 | 2026-10-24 | Release requires green `ci` on the tagged commit | trust the operator | Never tag a red build |
 | 17 | 2026-10-24 | Conservative stale bot (needs-info issues, idle PRs only) + PR size labels | aggressive stale; none | Keeps queues healthy without closing real backlog |
 | 18 | 2026-10-26 | Boards are created in the website from the template; `bootstrap.sh` only links them and sets sprints | `gh project copy` in the script | The API copy times out (502) on a template with 14 views and charts, and silently drops charts and drafts. The website copy is complete |
+| 19 | 2026-10-26 | Second board template **Product Template** for multi-repo products: statuses split sprint work (… Dev done) from release flow (In staging → Verified → Released); Release train field; Found in field | one Done status; Milestones per repo | Sprint completion ≠ live; milestones are per repo, while a release train spans repos |
+| 20 | 2026-10-26 | Tasks/Bugs in code repos + `topic:<name>` labels; Epic/Feature optional | mandatory planning repo + epics | Keep it light now; sub-issues work across repos when needed |
+| 21 | 2026-10-26 | Dev done / In staging / Released moved by hand (one drag / bulk edit); no GitHub App yet | Actions + GitHub App | Keyword links only work against `main`; App setup deferred to keep things simple |
+| 22 | 2026-10-26 | bootstrap creates labels directly and drops required checks when the repo lacks the template workflows | require template repos only | Lets existing .NET / React / Flutter repos join the setup safely |
