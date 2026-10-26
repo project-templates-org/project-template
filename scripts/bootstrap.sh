@@ -4,7 +4,8 @@
 # GitHub does NOT copy rulesets, extra branches, settings or project boards when a repo is
 # generated from a template — this script applies all of them. It is idempotent (safe to re-run).
 #
-# Usage:
+# Usage (create the project board first in the UI from the "Project Template" template,
+# named like --project-title; see docs/github-setup.md §3):
 #   scripts/bootstrap.sh <owner>/<repo> [--project-title "My Project"] [--no-project]
 #                        [--sprint-start YYYY-MM-DD] [--sprint-days 14] [--sprints 6]
 #
@@ -116,48 +117,61 @@ gh workflow run labels-sync.yml --repo "$REPO" --ref main && echo "labels-sync t
   || echo "WARN: could not trigger labels-sync (Actions disabled?)"
 
 if [ "$WITH_PROJECT" = true ]; then
-  step "Project board (copy of '$TEMPLATE_PROJECT_TITLE')"
-  existing="$(gh project list --owner "$OWNER" --format json --limit 200 --jq ".projects[] | select(.title==\"$PROJECT_TITLE\") | .number")"
-  if [ -n "$existing" ]; then
-    NUM="$existing"; echo "project '$PROJECT_TITLE' exists (#$NUM)"
+  step "Project board '$PROJECT_TITLE'"
+  # Boards are created in the GitHub UI from the template ("New project → Templates → Project
+  # Template"). The API copy (gh project copy) times out on a template this size and silently
+  # drops Insights charts and draft items, so this script never copies the board itself.
+  NUM="$(gh project list --owner "$OWNER" --format json --limit 200 --jq ".projects[] | select(.title==\"$PROJECT_TITLE\") | .number" | head -1)"
+  if [ -z "$NUM" ]; then
+    cat <<EOF
+Board '$PROJECT_TITLE' not found. Create it, then re-run this script:
+  1. https://github.com/orgs/$OWNER/projects → New project → Templates → "$TEMPLATE_PROJECT_TITLE"
+  2. Name it exactly: $PROJECT_TITLE  → Create project
+  3. bash scripts/bootstrap.sh $REPO --project-title "$PROJECT_TITLE"
+EOF
+    PROJECT_PENDING=true
   else
-    TPL="$(gh project list --owner "$OWNER" --format json --limit 200 --jq ".projects[] | select(.title==\"$TEMPLATE_PROJECT_TITLE\") | .number" | head -1)"
-    [ -n "$TPL" ] || { echo "ERROR: template project '$TEMPLATE_PROJECT_TITLE' not found in $OWNER"; exit 1; }
-    NUM="$(gh project copy "$TPL" --source-owner "$OWNER" --target-owner "$OWNER" --title "$PROJECT_TITLE" --drafts --format json --jq '.number')"
-    echo "created project #$NUM from template #$TPL"
-    FRESH_COPY=true
-  fi
-  gh project link "$NUM" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "linked to $REPO" || echo "already linked"
+    echo "found #$NUM"
+    # Not yet linked to any repository = just created from the template = sprints still hold
+    # the template's dates and get replaced below.
+    linked="$(gh api graphql -f query='query($o:String!,$n:Int!){ organization(login:$o){ projectV2(number:$n){ repositories(first:1){ totalCount } } } }'       -f o="$OWNER" -F n="$NUM" --jq '.data.organization.projectV2.repositories.totalCount')"
+    [ "$linked" = 0 ] && FRESH_COPY=true
+    gh project link "$NUM" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "linked to $REPO" || echo "already linked"
 
-  step "Sprints (Iteration field)"
-  # A fresh copy inherits the template's sprint dates, so it always gets its own schedule.
-  # On re-runs, an existing board keeps its sprints while it has a current or upcoming one
-  # (never wipes real sprint data); pass --sprint-start to force a new schedule.
-  IT_Q='query($o:String!,$n:Int!){ organization(login:$o){ projectV2(number:$n){ field(name:"Iteration"){ ... on ProjectV2IterationField { id configuration { iterations { startDate duration } } } } } } }'
-  IT_ID="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM" --jq '.data.organization.projectV2.field.id // empty')"
-  LAST_END="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM"     --jq '[.data.organization.projectV2.field.configuration.iterations[] | (.startDate | strptime("%Y-%m-%d") | mktime) + .duration * 86400] | (max // 0) | strftime("%Y-%m-%d")')"
-  if [ -z "$IT_ID" ]; then
-    echo "WARN: no Iteration field on project #$NUM"
-  elif [ "${FRESH_COPY:-false}" != true ] && [ -z "$SPRINT_START" ] && [[ "$LAST_END" > "$(date -u +%F)" ]]; then
-    echo "has current/upcoming sprints (until $LAST_END) - left unchanged (pass --sprint-start to reset)"
-  else
-    START="${SPRINT_START:-$(next_monday)}"
-    its=""
-    for i in $(seq 0 $((SPRINTS - 1))); do
-      its="$its{title:\"Sprint $((i + 1))\", startDate:\"$(add_days "$START" $((i * SPRINT_DAYS)))\", duration:$SPRINT_DAYS},"
-    done
-    gh api graphql -f query="mutation{ updateProjectV2Field(input:{fieldId:\"$IT_ID\", iterationConfiguration:{startDate:\"$START\", duration:$SPRINT_DAYS, iterations:[${its%,}]}}){ clientMutationId } }" >/dev/null
-    echo "$SPRINTS sprints of $SPRINT_DAYS days from $START"
+    step "Sprints (Iteration field)"
+    # A fresh copy inherits the template's sprint dates, so it always gets its own schedule.
+    # On re-runs, an existing board keeps its sprints while it has a current or upcoming one
+    # (never wipes real sprint data); pass --sprint-start to force a new schedule.
+    IT_Q='query($o:String!,$n:Int!){ organization(login:$o){ projectV2(number:$n){ field(name:"Iteration"){ ... on ProjectV2IterationField { id configuration { iterations { startDate duration } } } } } } }'
+    IT_ID="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM" --jq '.data.organization.projectV2.field.id // empty')"
+    LAST_END="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM"     --jq '[.data.organization.projectV2.field.configuration.iterations[] | (.startDate | strptime("%Y-%m-%d") | mktime) + .duration * 86400] | (max // 0) | strftime("%Y-%m-%d")')"
+    if [ -z "$IT_ID" ]; then
+      echo "WARN: no Iteration field on project #$NUM"
+    elif [ "${FRESH_COPY:-false}" != true ] && [ -z "$SPRINT_START" ] && [[ "$LAST_END" > "$(date -u +%F)" ]]; then
+      echo "has current/upcoming sprints (until $LAST_END) - left unchanged (pass --sprint-start to reset)"
+    else
+      START="${SPRINT_START:-$(next_monday)}"
+      its=""
+      for i in $(seq 0 $((SPRINTS - 1))); do
+        its="$its{title:\"Sprint $((i + 1))\", startDate:\"$(add_days "$START" $((i * SPRINT_DAYS)))\", duration:$SPRINT_DAYS},"
+      done
+      gh api graphql -f query="mutation{ updateProjectV2Field(input:{fieldId:\"$IT_ID\", iterationConfiguration:{startDate:\"$START\", duration:$SPRINT_DAYS, iterations:[${its%,}]}}){ clientMutationId } }" >/dev/null
+      echo "$SPRINTS sprints of $SPRINT_DAYS days from $START"
+    fi
+    echo "https://github.com/orgs/$OWNER/projects/$NUM"
   fi
-  echo "https://github.com/orgs/$OWNER/projects/$NUM"
+fi
+
+if [ "${PROJECT_PENDING:-false}" = true ]; then
+  echo
+  echo "==> NOT DONE: create the board '$PROJECT_TITLE' from the template in the UI (see above), then re-run."
+  exit 2
 fi
 
 cat <<EOF
 
-==> Done. Manual steps (not available via API) — see docs/github-setup.md:
-  1. Project → Workflows: enable "Auto-add to project" (filter: repo:$REPO is:issue,pr is:open),
-     "Item closed" → Done, "Pull request merged" → Done, "Auto-archive items".
-  2. Project views: Roadmap → Date fields = Start date / Target date, and Estimate field sums
-     (docs/manual-setup-guide.md §4.4). Re-create views any time: scripts/setup-views.sh $OWNER <number>
-  3. Replace CODEOWNERS owners with your team, and add project-specific checks to scripts/ci.sh.
+==> Done. Remaining manual steps (no API) — docs/manual-setup-guide.md:
+  1. Board → Workflows → "Auto-add to project": repo $REPO, filter is:issue,pr is:open
+     (the only workflow a template copy doesn't keep; views, charts and other workflows come with it).
+  2. Replace CODEOWNERS owners with your team, and add project-specific checks to scripts/ci.sh.
 EOF
