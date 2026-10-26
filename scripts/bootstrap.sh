@@ -6,6 +6,7 @@
 #
 # Usage:
 #   scripts/bootstrap.sh <owner>/<repo> [--project-title "My Project"] [--no-project]
+#                        [--sprint-start YYYY-MM-DD] [--sprint-days 14] [--sprints 6]
 #
 # Requires: gh CLI authenticated with a token that has (repo) Administration, Contents, Issues,
 # Pull requests, Workflows, Actions = read/write and (org) Projects = read/write.
@@ -15,12 +16,18 @@ REPO="${1:?usage: scripts/bootstrap.sh <owner>/<repo> [--project-title TITLE] [-
 shift
 OWNER="${REPO%%/*}"
 PROJECT_TITLE=""
+SPRINT_START=""
+SPRINT_DAYS=14
+SPRINTS=6
 WITH_PROJECT=true
 TEMPLATE_PROJECT_TITLE="Project Template"
 while [ $# -gt 0 ]; do
   case "$1" in
     --project-title) PROJECT_TITLE="$2"; shift 2 ;;
     --no-project) WITH_PROJECT=false; shift ;;
+    --sprint-start) SPRINT_START="$2"; shift 2 ;;
+    --sprint-days) SPRINT_DAYS="$2"; shift 2 ;;
+    --sprints) SPRINTS="$2"; shift 2 ;;
     *) echo "unknown option $1"; exit 1 ;;
   esac
 done
@@ -28,6 +35,12 @@ PROJECT_TITLE="${PROJECT_TITLE:-${REPO#*/}}"
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 
 step() { printf '\n==> %s\n' "$*"; }
+# Date helpers: GNU date (Linux, Git Bash) with a BSD/macOS fallback
+add_days() { date -u -d "$1 +$2 days" +%F 2>/dev/null || date -u -j -v+"$2"d -f %F "$1" +%F; }
+next_monday() { # today if Monday, else the coming Monday
+  local dow; dow="$(date -u +%u)"
+  if [ "$dow" = 1 ]; then date -u +%F; else add_days "$(date -u +%F)" $(( 8 - dow )); fi
+}
 
 step "Repository settings"
 gh api -X PATCH "repos/$REPO" \
@@ -112,8 +125,30 @@ if [ "$WITH_PROJECT" = true ]; then
     [ -n "$TPL" ] || { echo "ERROR: template project '$TEMPLATE_PROJECT_TITLE' not found in $OWNER"; exit 1; }
     NUM="$(gh project copy "$TPL" --source-owner "$OWNER" --target-owner "$OWNER" --title "$PROJECT_TITLE" --drafts --format json --jq '.number')"
     echo "created project #$NUM from template #$TPL"
+    FRESH_COPY=true
   fi
   gh project link "$NUM" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "linked to $REPO" || echo "already linked"
+
+  step "Sprints (Iteration field)"
+  # A fresh copy inherits the template's sprint dates, so it always gets its own schedule.
+  # On re-runs, an existing board keeps its sprints while it has a current or upcoming one
+  # (never wipes real sprint data); pass --sprint-start to force a new schedule.
+  IT_Q='query($o:String!,$n:Int!){ organization(login:$o){ projectV2(number:$n){ field(name:"Iteration"){ ... on ProjectV2IterationField { id configuration { iterations { startDate duration } } } } } } }'
+  IT_ID="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM" --jq '.data.organization.projectV2.field.id // empty')"
+  LAST_END="$(gh api graphql -f query="$IT_Q" -f o="$OWNER" -F n="$NUM"     --jq '[.data.organization.projectV2.field.configuration.iterations[] | (.startDate | strptime("%Y-%m-%d") | mktime) + .duration * 86400] | (max // 0) | strftime("%Y-%m-%d")')"
+  if [ -z "$IT_ID" ]; then
+    echo "WARN: no Iteration field on project #$NUM"
+  elif [ "${FRESH_COPY:-false}" != true ] && [ -z "$SPRINT_START" ] && [[ "$LAST_END" > "$(date -u +%F)" ]]; then
+    echo "has current/upcoming sprints (until $LAST_END) - left unchanged (pass --sprint-start to reset)"
+  else
+    START="${SPRINT_START:-$(next_monday)}"
+    its=""
+    for i in $(seq 0 $((SPRINTS - 1))); do
+      its="$its{title:\"Sprint $((i + 1))\", startDate:\"$(add_days "$START" $((i * SPRINT_DAYS)))\", duration:$SPRINT_DAYS},"
+    done
+    gh api graphql -f query="mutation{ updateProjectV2Field(input:{fieldId:\"$IT_ID\", iterationConfiguration:{startDate:\"$START\", duration:$SPRINT_DAYS, iterations:[${its%,}]}}){ clientMutationId } }" >/dev/null
+    echo "$SPRINTS sprints of $SPRINT_DAYS days from $START"
+  fi
   echo "https://github.com/orgs/$OWNER/projects/$NUM"
 fi
 
