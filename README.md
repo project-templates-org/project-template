@@ -4,11 +4,17 @@ Template repository for projects in **project-templates-org**. It is language-ag
 
 ## Use it
 
-```bash
-gh repo create project-templates-org/<name> --template project-templates-org/project-template --public --clone
-cd <name>
-bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
-```
+1. **Repository:**
+   ```bash
+   gh repo create project-templates-org/<name> --template project-templates-org/project-template --public --clone
+   cd <name>
+   ```
+2. **Board (in the GitHub website):** [org Projects](https://github.com/orgs/project-templates-org/projects) → **New project** → **Templates** tab → **Project Template** → name it `<Name>` → **Create project**.
+   The website copy keeps everything: fields, sprints, 14 views, Insights charts, automations and onboarding drafts. Don't use `gh project copy`: on a template this size it times out and silently drops the charts and drafts.
+3. **Apply everything else:**
+   ```bash
+   bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
+   ```
 
 Or click **Use this template**, then run `bootstrap.sh`. GitHub doesn't copy rulesets, extra branches or boards from a template, so the script sets them up. It's safe to run more than once.
 
