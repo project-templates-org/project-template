@@ -19,3 +19,4 @@
 | 15 | 2026-10-24 | CodeQL default setup + OpenSSF Scorecard | none | Free for public repos; measurable security posture |
 | 16 | 2026-10-24 | Release requires green `ci` on the tagged commit | trust the operator | Never tag a red build |
 | 17 | 2026-10-24 | Conservative stale bot (needs-info issues, idle PRs only) + PR size labels | aggressive stale; none | Keeps queues healthy without closing real backlog |
+| 18 | 2026-10-26 | Boards are created in the website from the template; `bootstrap.sh` only links them and sets sprints | `gh project copy` in the script | The API copy times out (502) on a template with 14 views and charts, and silently drops charts and drafts. The website copy is complete |

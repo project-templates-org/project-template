@@ -42,17 +42,23 @@ Org: **project-templates-org** · Plan: **GitHub Free** · Last updated: 2026-10
 
 ## 3. Creating a new project from the template
 
-```bash
-gh repo create project-templates-org/<name> --template project-templates-org/project-template --public --clone
-cd <name>
-bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
-# optional sprint schedule (defaults: next Monday, 14 days, 6 sprints)
-#   --sprint-start 2026-11-02 --sprint-days 14 --sprints 6
-```
+1. **Repository:**
+   ```bash
+   gh repo create project-templates-org/<name> --template project-templates-org/project-template --public --clone
+   cd <name>
+   ```
+2. **Board (in the GitHub website):** [org Projects](https://github.com/orgs/project-templates-org/projects) → **New project** → **Templates** tab → **Project Template** → name it `<Name>` → **Create project**.
+   The website copy keeps everything: fields, sprints, 14 views, Insights charts, automations and onboarding drafts. Don't use `gh project copy`: on a template this size it times out and silently drops the charts and drafts.
+3. **Apply everything else:**
+   ```bash
+   bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
+   ```
 
-A fresh board gets its **own sprint schedule** (6 × 2 weeks from the next Monday) instead of the template's dates. Re-running never changes sprints on a board that still has a current or upcoming one, unless you pass `--sprint-start`.
+   Optional sprint schedule (defaults: next Monday, 14 days, 6 sprints): `--sprint-start 2026-11-02 --sprint-days 14 --sprints 6`.
 
-`bootstrap.sh` applies: settings, security, Actions PR permission, `staging` + `development` branches, rulesets, environments, labels, a copy of the **Project Template** board linked to the repo. Then do the manual steps below.
+A board that isn't linked to a repository yet (i.e. just created from the template) gets its **own sprint schedule** (6 × 2 weeks from the next Monday) instead of the template's dates. Re-running never changes sprints on a board that still has a current or upcoming one, unless you pass `--sprint-start`.
+
+`bootstrap.sh` applies: settings, security, Actions PR permission, `staging` + `development` branches, rulesets, environments, labels, then finds the board by `--project-title`, links it to the repo and sets its sprints. If the board doesn't exist yet, it prints how to create it and exits with code 2. Then switch on the board's **Auto-add** workflow (the only workflow a template copy doesn't keep).
 
 ## 4. Manual steps (UI only — no API exists)
 
@@ -100,6 +106,7 @@ Resource owner **project-templates-org**, *All repositories*.
 | `staging` → `main` promotion (PR #4); sync-down skips when there are no file changes | ✅ |
 | Release `v0.1.0`: tag, GitHub Release with categorized notes, `release/v0.1.0` created | ✅ |
 | Push to `release/v0.1.0` | ✅ rejected ("Cannot update this protected ref") |
-| `gh project copy` of the template: fields, views, sprints, drafts preserved | ✅ |
+| `gh project copy` of the template: fields, views, sprints, drafts preserved | ✅ with 7 views; ❌ since 14 views + charts: times out (502) and drops charts and drafts |
+| UI **New project → Templates** copy (2026-10-26) | ✅ fields, 14 views, Insights charts, 8 workflows, drafts. Auto-add is not copied (by design) |
 
 Known quirk: checks attach to a **commit**, so two PRs from the same branch show the same check results. Use one branch per PR.
