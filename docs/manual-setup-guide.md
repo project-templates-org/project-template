@@ -264,6 +264,8 @@ Don't create Priority, Type or Status labels: those are issue types and project 
 
 ## 4. The project board
 
+> Two board templates exist: **Project Template** (single repo, described below) and **Product Template** (many repos, sprint ≠ release). Product Template statuses, fields, views, workflows and charts: [status-and-release-flow.md](status-and-release-flow.md).
+
 ### 4.1 Create — *org page → Projects → New project*
 Start from **Project Template** (the *Templates* tab) ⭐. The website copy keeps fields, sprints, views (including roadmap dates and sums), Insights charts, workflows and draft items, so only these are left: **Auto-add** (4.7), linking the repo (4.11) and your own sprint dates (4.3, or let `bootstrap.sh` do both). Don't copy with `gh project copy` / the API: on a template this size it times out and drops charts and drafts. To build one from scratch, pick **Table**, name it after the product, then:
 
