@@ -265,7 +265,7 @@ Don't create Priority, Type or Status labels: those are issue types and project 
 ## 4. The project board
 
 ### 4.1 Create — *org page → Projects → New project*
-Start from **Project Template** (the *Templates* tab) ⭐. That copies fields, iterations and views (4.2–4.6). After copying, do the **UI only** cells in 4.4 plus 4.7–4.11: copies don't keep roadmap dates, sums or charts reliably, so always check them. To build one from scratch, pick **Table**, name it after the product, then:
+Start from **Project Template** (the *Templates* tab) ⭐. The website copy keeps fields, sprints, views (including roadmap dates and sums), Insights charts, workflows and draft items, so only these are left: **Auto-add** (4.7), linking the repo (4.11) and your own sprint dates (4.3, or let `bootstrap.sh` do both). Don't copy with `gh project copy` / the API: on a template this size it times out and drops charts and drafts. To build one from scratch, pick **Table**, name it after the product, then:
 
 ### 4.2 Status field — *table header → Status → Edit field*
 Rename and add options in this order:
