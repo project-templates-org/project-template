@@ -46,7 +46,11 @@ Org: **project-templates-org** · Plan: **GitHub Free** · Last updated: 2026-10
 gh repo create project-templates-org/<name> --template project-templates-org/project-template --public --clone
 cd <name>
 bash scripts/bootstrap.sh project-templates-org/<name> --project-title "<Name>"
+# optional sprint schedule (defaults: next Monday, 14 days, 6 sprints)
+#   --sprint-start 2026-11-02 --sprint-days 14 --sprints 6
 ```
+
+A fresh board gets its **own sprint schedule** (6 × 2 weeks from the next Monday) instead of the template's dates. Re-running never changes sprints on a board that still has a current or upcoming one, unless you pass `--sprint-start`.
 
 `bootstrap.sh` applies: settings, security, Actions PR permission, `staging` + `development` branches, rulesets, environments, labels, a copy of the **Project Template** board linked to the repo. Then do the manual steps below.
 

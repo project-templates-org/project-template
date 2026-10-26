@@ -285,7 +285,7 @@ Rename and add options in this order:
 | Priority | Single select | P0 (red) critical · P1 (orange) high · P2 (yellow) medium · P3 (gray) low |
 | Size | Single select | XS < 2h · S ≤ 1d · M ≤ 3d · L ≤ 1wk · XL > 1wk (split it) |
 | Estimate | Number | story points 1, 2, 3, 5, 8, 13 (optional) |
-| Iteration | Iteration | Starts on a **Monday**, duration **2 weeks**; create 4 iterations ahead |
+| Iteration | Iteration | Starts on a **Monday**, duration **2 weeks**; keep at least 4 sprints ahead (*Edit field → Add iteration*). `bootstrap.sh` creates 6 for each new board |
 | Start date | Date | |
 | Target date | Date | |
 | Area | Single select | Frontend · Backend · Infrastructure · Design · Documentation (adapt per project) |
